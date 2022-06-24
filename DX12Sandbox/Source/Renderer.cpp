@@ -226,6 +226,7 @@ bool CRenderer::InitD3D()
 
 	// Create a PSO
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC PSODesc = {};
+	PSODesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT); // default depth/stencil state
 	PSODesc.InputLayout = InputLayoutDesc;
 	PSODesc.pRootSignature = RootSignature;
 	PSODesc.VS = VertexShaderBytecode;
@@ -248,6 +249,47 @@ bool CRenderer::InitD3D()
 	Mesh = new CMesh;
 	Mesh->Init(Device, CommandList);
 
+	// Depth / Stencil 
+
+	// Create the Depth/Stencil descriptor heap
+	D3D12_DESCRIPTOR_HEAP_DESC DepthStencilViewHeapDesc = {};
+	DepthStencilViewHeapDesc.NumDescriptors = 1;
+	DepthStencilViewHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	DepthStencilViewHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	Hr = Device->CreateDescriptorHeap(&DepthStencilViewHeapDesc, IID_PPV_ARGS(&DepthStencilDescriptorHeap));
+	if (FAILED(Hr))
+	{
+		return false;
+	}
+
+	D3D12_DEPTH_STENCIL_VIEW_DESC DepthStencilDesc = {};
+	DepthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	DepthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	DepthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+	// the value we want when the depth/stencil is clear
+	D3D12_CLEAR_VALUE DepthClearValue = {};
+	DepthClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+	DepthClearValue.DepthStencil.Depth = 1.0f;
+	DepthClearValue.DepthStencil.Stencil = 0;
+
+	Device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, WindowWidth, WindowHeight, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,
+		&DepthClearValue,
+		IID_PPV_ARGS(&DepthStencilBuffer)
+	);
+	Hr = Device->CreateDescriptorHeap(&DepthStencilViewHeapDesc, IID_PPV_ARGS(&DepthStencilDescriptorHeap));
+	if (FAILED(Hr))
+	{
+		return false;
+	}
+	DepthStencilDescriptorHeap->SetName(L"Depth/Stencil Resource Heap");
+
+	Device->CreateDepthStencilView(DepthStencilBuffer, &DepthStencilDesc, DepthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+
 	CommandList->Close();
 
 	ID3D12CommandList* ppCommandLists[] = { CommandList };
@@ -259,6 +301,14 @@ bool CRenderer::InitD3D()
 	{
 		return false;
 	}
+
+	Mesh->VertexBufferView.BufferLocation = Mesh->VertexBuffer->GetGPUVirtualAddress();
+	Mesh->VertexBufferView.StrideInBytes = sizeof(Vertex);
+	Mesh->VertexBufferView.SizeInBytes = Mesh->GetVertexBufferSize();
+
+	Mesh->IndexBufferView.BufferLocation = Mesh->IndexBuffer->GetGPUVirtualAddress();
+	Mesh->IndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+	Mesh->IndexBufferView.SizeInBytes = Mesh->GetIndexBufferSize();
 
 	// Fill out the Viewport
 	Viewport.TopLeftX = 0;
@@ -304,12 +354,18 @@ void CRenderer::UpdatePipeline()
 
 	// We create a resource Barrier to transition from present to render target state and we get a handle to the current RTV
 	CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(RenderTargets[FrameIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+	
 	CD3DX12_CPU_DESCRIPTOR_HANDLE RTVHandle(RTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), FrameIndex, RTVDescriptorSize);
-	CommandList->OMSetRenderTargets(1, &RTVHandle, false, nullptr);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE DepthStencilHandle(DepthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+
+	CommandList->OMSetRenderTargets(1, &RTVHandle, false, &DepthStencilHandle);
 
 	// Clear the render target to the desired color
 	const float ClearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
 	CommandList->ClearRenderTargetView(RTVHandle, ClearColor, 0, nullptr);
+
+	// Clear the depth buffer
+	CommandList->ClearDepthStencilView(DepthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
 	// Draw
 	CommandList->SetGraphicsRootSignature(RootSignature);

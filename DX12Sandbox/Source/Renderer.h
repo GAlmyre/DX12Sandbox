@@ -67,6 +67,10 @@ public:
 	// PSO containing a pipeline state
 	ID3D12PipelineState* PSO;
 
+	// Depth/Stencil
+	ID3D12Resource* DepthStencilBuffer; // This is the memory for our depth buffer
+	ID3D12DescriptorHeap* DepthStencilDescriptorHeap; // This is a heap for our depth/stencil buffer descriptor
+
 	// Defines the data that shaders will access
 	ID3D12RootSignature* RootSignature;
 
@@ -75,18 +79,6 @@ public:
 
 	// The area to draw in, pixels outside will be culled
 	D3D12_RECT ScissorRect;
-
-	//// Default Buffer in GPU memory to send our Vertices
-	//ID3D12Resource* VertexBuffer;
-
-	//// A structure containing data to describe our VertexBuffer (pointer, size of the buffer, size of each element)
-	//D3D12_VERTEX_BUFFER_VIEW VertexBufferView;
-
-	//// Default Buffer in GPU memory to send our Indices
-	//ID3D12Resource* IndexBuffer;
-
-	//// A structure containing data to describe our IndexBuffer 
-	//D3D12_INDEX_BUFFER_VIEW IndexBufferView;
 
 	// One fence per allocator to know when the command list is being executed
 	ID3D12Fence* Fences[3];

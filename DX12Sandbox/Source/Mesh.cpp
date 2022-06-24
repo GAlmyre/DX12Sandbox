@@ -5,10 +5,17 @@
 
 CMesh::CMesh()
 {
-	Vertices.push_back(Vertex(DirectX::XMFLOAT3( -0.5f,	 0.5f,	0.5f),	DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)));
-	Vertices.push_back(Vertex(DirectX::XMFLOAT3(  0.5f,	-0.5f,	0.5f),	DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)));
-	Vertices.push_back(Vertex(DirectX::XMFLOAT3( -0.5f,	-0.5f,	0.5f),	DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)));
-	Vertices.push_back(Vertex(DirectX::XMFLOAT3(  0.5f,	 0.5f,	0.5f),	DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)));
+	// First quad
+	Vertices.push_back(Vertex(DirectX::XMFLOAT3(-0.5f, 0.5f, 0.5f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)));
+	Vertices.push_back(Vertex(DirectX::XMFLOAT3(0.5f, -0.5f, 0.5f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)));
+	Vertices.push_back(Vertex(DirectX::XMFLOAT3(-0.5f, -0.5f, 0.5f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)));
+	Vertices.push_back(Vertex(DirectX::XMFLOAT3(0.5f, 0.5f,	0.5f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)));
+
+	// Second quad
+	Vertices.push_back(Vertex(DirectX::XMFLOAT3(-0.75f, 0.75f, 0.7f),	DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)));
+	Vertices.push_back(Vertex(DirectX::XMFLOAT3(0.0f, 0.0f, 0.7f),	DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)));
+	Vertices.push_back(Vertex(DirectX::XMFLOAT3(-0.75f, 0.0f, 0.7f),	DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)));
+	Vertices.push_back(Vertex(DirectX::XMFLOAT3(0.0f, 0.75f, 0.7f),	DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)));
 
 	Indices = 
 	{	
@@ -82,13 +89,13 @@ void CMesh::Init(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList)
 	UpdateSubresources(CommandList, IndexBuffer, IBufferUploadHeap, 0, 0, 1, &IndexData);
 	CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(IndexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 
-	VertexBufferView.BufferLocation = VertexBuffer->GetGPUVirtualAddress();
-	VertexBufferView.StrideInBytes = sizeof(Vertex);
-	VertexBufferView.SizeInBytes = GetVertexBufferSize();
+	//VertexBufferView.BufferLocation = VertexBuffer->GetGPUVirtualAddress();
+	//VertexBufferView.StrideInBytes = sizeof(Vertex);
+	//VertexBufferView.SizeInBytes = GetVertexBufferSize();
 
-	IndexBufferView.BufferLocation = IndexBuffer->GetGPUVirtualAddress();
-	IndexBufferView.Format = DXGI_FORMAT_R32_UINT;
-	IndexBufferView.SizeInBytes = GetIndexBufferSize();
+	//IndexBufferView.BufferLocation = IndexBuffer->GetGPUVirtualAddress();
+	//IndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+	//IndexBufferView.SizeInBytes = GetIndexBufferSize();
 
 }
 
@@ -111,6 +118,7 @@ void CMesh::Draw(ID3D12GraphicsCommandList* CommandList)
 	// Set Index Buffer
 	CommandList->IASetIndexBuffer(&IndexBufferView);
 	CommandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+	CommandList->DrawIndexedInstanced(6, 1, 0, 4, 0);
 }
 
 CMesh::~CMesh()
