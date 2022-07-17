@@ -1,4 +1,12 @@
 #include "pch.h"
+#include <DirectXMath.h>
+
+#define FRAMEBUFFER_COUNT 3
+
+struct ColorConstantBuffer
+{
+	DirectX::XMFLOAT4 ColorMultiplier;
+};
 
 class CRenderer
 {
@@ -41,7 +49,7 @@ public:
 	/********** Direct 3D Variables **********/
 
 	// The number of FramBuffers (3 for tripleBuffering)
-	const int FrameBufferCount = 3;
+	const int FrameBufferCount = FRAMEBUFFER_COUNT;
 
 	// The direct3D Device
 	ID3D12Device* Device;
@@ -56,10 +64,10 @@ public:
 	ID3D12DescriptorHeap* RTVDescriptorHeap;
 
 	// FrameBufferCount Render Targets
-	ID3D12Resource* RenderTargets[3];
+	ID3D12Resource* RenderTargets[FRAMEBUFFER_COUNT];
 
 	// Allocators : FrameBufferCount * NumberOfThreads
-	ID3D12CommandAllocator* CommandAllocators[3];
+	ID3D12CommandAllocator* CommandAllocators[FRAMEBUFFER_COUNT];
 
 	// The Command list to record commands into then execute to render
 	ID3D12GraphicsCommandList* CommandList;
@@ -81,13 +89,13 @@ public:
 	D3D12_RECT ScissorRect;
 
 	// One fence per allocator to know when the command list is being executed
-	ID3D12Fence* Fences[3];
+	ID3D12Fence* Fences[FRAMEBUFFER_COUNT];
 
 	// Handle to an event for our fence
 	HANDLE FenceEvent;
 
 	// Value incremented each frame for each Fence
-	UINT64 FenceValues[3];
+	UINT64 FenceValues[FRAMEBUFFER_COUNT];
 
 	// Current RenderTarget
 	int FrameIndex;
@@ -95,8 +103,20 @@ public:
 	// Size of the Render Target Descriptor
 	int RTVDescriptorSize;
 
+	// *** Constant Buffer *** //
+	// The heap to store the descriptor of our constant buffer
+	ID3D12DescriptorHeap* MainDescriptorHeap[FRAMEBUFFER_COUNT];
+
+	// The memory in GPU where our constant buffer will be
+	ID3D12Resource* ConstantBufferUploadHeap[FRAMEBUFFER_COUNT];
+
+	// The actual constant buffer data
+	ColorConstantBuffer ConstantBufferColorMultiplierData;
+
+	// A pointer to the memory location of our constant buffer
+	UINT8* ConstantBufferColorMultiplierGPUAdress[FRAMEBUFFER_COUNT];
+
 	/********** End Direct 3D Variables **********/
 
 	class CMesh* Mesh = nullptr;
-
 };
