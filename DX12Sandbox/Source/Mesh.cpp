@@ -28,10 +28,12 @@ void CMesh::Init(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList)
 {
 	int VertexBufferSize = GetVertexBufferSize();
 
+	CD3DX12_HEAP_PROPERTIES HeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+	CD3DX12_RESOURCE_DESC BufferDesc = CD3DX12_RESOURCE_DESC::Buffer(VertexBufferSize);
 	Device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		&HeapProperties,
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(VertexBufferSize),
+		&BufferDesc,
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
 		IID_PPV_ARGS(&VertexBuffer)
@@ -39,10 +41,11 @@ void CMesh::Init(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList)
 	VertexBuffer->SetName(L"Vertex Buffer Resource Heap");
 
 	ID3D12Resource* VBufferUploadHeap;
+	HeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 	Device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		&HeapProperties,
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(VertexBufferSize),
+		&BufferDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&VBufferUploadHeap)
@@ -55,15 +58,18 @@ void CMesh::Init(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList)
 	VertexData.SlicePitch = VertexBufferSize;
 
 	UpdateSubresources(CommandList, VertexBuffer, VBufferUploadHeap, 0, 0, 1, &VertexData);
-	CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(VertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+	CD3DX12_RESOURCE_BARRIER Barrier = CD3DX12_RESOURCE_BARRIER::Transition(VertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+	CommandList->ResourceBarrier(1, &Barrier);
 
 	// Create the IndexBuffer
 	int IndexBufferSize = GetIndexBufferSize();
 
+	HeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+	BufferDesc = CD3DX12_RESOURCE_DESC::Buffer(IndexBufferSize);
 	Device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		&HeapProperties,
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(IndexBufferSize),
+		&BufferDesc,
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
 		IID_PPV_ARGS(&IndexBuffer)
@@ -71,10 +77,11 @@ void CMesh::Init(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList)
 	IndexBuffer->SetName(L"Index Buffer Resource Heap");
 
 	ID3D12Resource* IBufferUploadHeap;
+	HeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 	Device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		&HeapProperties,
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(IndexBufferSize),
+		&BufferDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&IBufferUploadHeap)
@@ -87,7 +94,8 @@ void CMesh::Init(ID3D12Device* Device, ID3D12GraphicsCommandList* CommandList)
 	IndexData.SlicePitch = IndexBufferSize;
 
 	UpdateSubresources(CommandList, IndexBuffer, IBufferUploadHeap, 0, 0, 1, &IndexData);
-	CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(IndexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+	Barrier = CD3DX12_RESOURCE_BARRIER::Transition(IndexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+	CommandList->ResourceBarrier(1, &Barrier);
 
 	//VertexBufferView.BufferLocation = VertexBuffer->GetGPUVirtualAddress();
 	//VertexBufferView.StrideInBytes = sizeof(Vertex);
