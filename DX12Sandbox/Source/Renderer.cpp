@@ -341,10 +341,12 @@ bool CRenderer::InitD3D()
 	// Create an upload heap for the constant buffer (no need for a default heap as we will send this every frame)
 	for (int i = 0; i < FRAMEBUFFER_COUNT; ++i)
 	{
+		CD3DX12_HEAP_PROPERTIES HeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		CD3DX12_RESOURCE_DESC BufferDesc = CD3DX12_RESOURCE_DESC::Buffer(1024 * 64);
 		Device->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			&HeapProperties,
 			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(1024 * 64), // Constant buffers must be 64KB aligned
+			&BufferDesc, // Constant buffers must be 64KB aligned
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
 			IID_PPV_ARGS(&ConstantBufferUploadHeap[i])
