@@ -12,15 +12,15 @@ struct VS_OUTPUT
 
 cbuffer ConstantBuffer : register(b0)
 {
-    float4 ColorMultiplier;
-};
+    float4x4 WorldViewProjMatrix;
+}
 
 VS_OUTPUT main(VS_INPUT Input)
 {
     VS_OUTPUT Output;
     
-    Output.Color = Input.Color * ColorMultiplier;
-    Output.Pos = float4(Input.Pos, 1.0f);
+    Output.Color = Input.Color;
+    Output.Pos = mul(float4(Input.Pos, 1), WorldViewProjMatrix);
     
     return Output;
 }

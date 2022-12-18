@@ -30,6 +30,15 @@
     <ClCompile Include="Source\Mesh.cpp">
       <Filter>Private</Filter>
     </ClCompile>
+    <ClCompile Include="Source\CCube.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Actor.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Camera.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -45,6 +54,15 @@
       <Filter>Public</Filter>
     </ClInclude>
     <ClInclude Include="Source\Mesh.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CCube.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Actor.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Camera.h">
       <Filter>Public</Filter>
     </ClInclude>
   </ItemGroup>

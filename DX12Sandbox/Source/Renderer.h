@@ -3,9 +3,9 @@
 
 #define FRAMEBUFFER_COUNT 3
 
-struct ColorConstantBuffer
+struct ConstantBufferPerObject
 {
-	DirectX::XMFLOAT4 ColorMultiplier;
+	DirectX::XMFLOAT4X4 WorldViewProj;
 };
 
 class CRenderer
@@ -105,18 +105,35 @@ public:
 
 	// *** Constant Buffer *** //
 	// The heap to store the descriptor of our constant buffer
-	ID3D12DescriptorHeap* MainDescriptorHeap[FRAMEBUFFER_COUNT];
+	int ConstantBufferPerObjectAlignedSize = (sizeof(ConstantBufferPerObject) + 255) & ~255;
+
+	ConstantBufferPerObject ConstantBuffer;
 
 	// The memory in GPU where our constant buffer will be
-	ID3D12Resource* ConstantBufferUploadHeap[FRAMEBUFFER_COUNT];
-
-	// The actual constant buffer data
-	ColorConstantBuffer ConstantBufferColorMultiplierData;
+	ID3D12Resource* ConstantBufferUploadHeaps[FRAMEBUFFER_COUNT];
 
 	// A pointer to the memory location of our constant buffer
-	UINT8* ConstantBufferColorMultiplierGPUAdress[FRAMEBUFFER_COUNT];
+	UINT8* ConstantBufferGPUAdress[FRAMEBUFFER_COUNT];
 
 	/********** End Direct 3D Variables **********/
 
 	class CMesh* Mesh = nullptr;
+
+	/********** Camera **********/
+
+	class Camera* SceneCamera = nullptr;
+
+	//DirectX::XMFLOAT4X4 CamProjMatrix; // this will store our projection matrix
+	//DirectX::XMFLOAT4X4 CamViewMatrix; // this will store our view matrix
+
+	//DirectX::XMFLOAT4 CameraPosition; // this is our cameras position vector
+	//DirectX::XMFLOAT4 CameraTarget; // a vector describing the point in space our camera is looking at
+	//DirectX::XMFLOAT4 CameraUp; // the worlds up vector
+
+	DirectX::XMFLOAT4X4 MeshWorldMat; // our first cubes world matrix (transformation matrix)
+	DirectX::XMFLOAT4X4 MeshRotMat; // this will keep track of our rotation for the first cube
+	DirectX::XMFLOAT4 MeshPosition; // our first cubes position in space
+
+	/********** End Camera **********/
+
 };

@@ -1,5 +1,9 @@
 #include "pch.h"
+
+#include "Camera.h"
 #include "Renderer.h"
+
+CRenderer* Renderer = nullptr;
 
 LRESULT CALLBACK WindowProcess(HWND HWnd, UINT Message, WPARAM WParam, LPARAM LParam)
 {
@@ -9,6 +13,30 @@ LRESULT CALLBACK WindowProcess(HWND HWnd, UINT Message, WPARAM WParam, LPARAM LP
 		if (WParam == VK_ESCAPE)
 		{
 			DestroyWindow(HWnd);
+		}
+		if (WParam == 'Z' && Renderer)
+		{
+			Renderer->SceneCamera->MoveForward(1.0f);
+		}
+		if (WParam == 'S' && Renderer)
+		{
+			Renderer->SceneCamera->MoveForward(-1.0f);
+		}
+		if (WParam == 'D' && Renderer)
+		{
+			Renderer->SceneCamera->MoveRight(1.0f);
+		}
+		if (WParam == 'Q' && Renderer)
+		{
+			Renderer->SceneCamera->MoveRight(-1.0f);
+		}
+		if (WParam == 'A' && Renderer)
+		{
+			Renderer->SceneCamera->MoveUp(1.0f);
+		}
+		if (WParam == 'E' && Renderer)
+		{
+			Renderer->SceneCamera->MoveUp(-1.0f);
 		}
 
 	case WM_DESTROY:
@@ -45,7 +73,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
 	RegisterClassEx(&WindowClass);
 
-	CRenderer* Renderer = new CRenderer();
+	Renderer = new CRenderer();
 
 	/* Initialize the Window Class*/
 	HWND HWnd = CreateWindow(WindowClassName, WindowClassName, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, 0, Renderer->WindowWidth, Renderer->WindowHeight, nullptr, nullptr, GetModuleHandle(NULL), nullptr);
@@ -68,7 +96,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
 	/* Handle Messages */
 	MSG Message = { 0 };
-	while (Message.message != WM_QUIT && Renderer->bRunning)
+	while (Message.message != WM_CLOSE && Renderer->bRunning)
 	{
 		if (PeekMessage(&Message, 0, 0, 0, PM_REMOVE))
 		{

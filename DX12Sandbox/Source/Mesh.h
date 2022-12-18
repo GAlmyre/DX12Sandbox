@@ -1,20 +1,23 @@
+#pragma once
+
 #include <DirectXMath.h>
 #include <vector>
 #include "pch.h"
+#include "Actor.h"
 
 struct Vertex
 {
-	Vertex(DirectX::XMFLOAT3 InPos, DirectX::XMFLOAT4 InColor) 
+	Vertex(XMFLOAT3 InPos, XMFLOAT4 InColor) 
 	{ 
 		Pos = InPos; 
 		Color = InColor;	
 	}
 
-	DirectX::XMFLOAT3 Pos;
-	DirectX::XMFLOAT4 Color; 
+	XMFLOAT3 Pos;
+	XMFLOAT4 Color; 
 };
 
-class CMesh
+class CMesh : public Actor
 {
 public:
 

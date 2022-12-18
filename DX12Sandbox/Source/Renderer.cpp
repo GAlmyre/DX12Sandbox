@@ -1,6 +1,54 @@
 #include "pch.h"
 #include "Renderer.h"
 #include "Mesh.h"
+#include "CCube.h"
+#include "Camera.h"
+#include <shlobj.h>
+#include <strsafe.h>
+
+
+static std::wstring GetLatestWinPixGpuCapturerPath()
+{
+	LPWSTR ProgramFilesPath = nullptr;
+	SHGetKnownFolderPath(FOLDERID_ProgramFiles, KF_FLAG_DEFAULT, NULL, &ProgramFilesPath);
+
+	std::wstring PixSearchPath = ProgramFilesPath + std::wstring(L"\\Microsoft PIX\\*");
+
+	WIN32_FIND_DATA FindData;
+	bool bFoundPixInstallation = false;
+	wchar_t NewestVersionFound[MAX_PATH];
+
+	HANDLE hFind = FindFirstFile(PixSearchPath.c_str(), &FindData);
+	if (hFind != INVALID_HANDLE_VALUE)
+	{
+		do
+		{
+			if (((FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY) &&
+				(FindData.cFileName[0] != '.'))
+			{
+				if (!bFoundPixInstallation || wcscmp(NewestVersionFound, FindData.cFileName) <= 0)
+				{
+					bFoundPixInstallation = true;
+					StringCchCopy(NewestVersionFound, _countof(NewestVersionFound), FindData.cFileName);
+				}
+			}
+		} while (FindNextFile(hFind, &FindData) != 0);
+	}
+
+	FindClose(hFind);
+
+	if (!bFoundPixInstallation)
+	{
+		MessageBox(0, L"Error: no PIX installation found", 0, 0);
+	}
+
+	wchar_t Output[MAX_PATH];
+	StringCchCopy(Output, PixSearchPath.length(), PixSearchPath.data());
+	StringCchCat(Output, MAX_PATH, &NewestVersionFound[0]);
+	StringCchCat(Output, MAX_PATH, L"\\WinPixGpuCapturer.dll");
+
+	return &Output[0];
+}
 
 CRenderer::CRenderer()
 {
@@ -17,6 +65,13 @@ bool CRenderer::InitD3D()
 	{
 		MessageBox(0, L"Couldn't create a factory", 0, 0);
 		return false;
+	}
+
+	// Check to see if a copy of WinPixGpuCapturer.dll has already been injected into the application.
+	// This may happen if the application is launched through the PIX UI. 
+	if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0)
+	{
+		LoadLibrary(GetLatestWinPixGpuCapturerPath().c_str());
 	}
 
 	IDXGIAdapter1* Adapter;
@@ -171,43 +226,25 @@ bool CRenderer::InitD3D()
 	OutputDebugString(L"Fences Created\n");
 
 	// Create the Root Signature
-	
-	// Descriptor Range (a range of descriptors inside a descriptor heap)
-	D3D12_DESCRIPTOR_RANGE DescriptorTableRanges[1];
-	DescriptorTableRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-	DescriptorTableRanges[0].NumDescriptors = 1;
-	DescriptorTableRanges[0].BaseShaderRegister = 0;
-	DescriptorTableRanges[0].RegisterSpace = 0;
-	DescriptorTableRanges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+	D3D12_ROOT_DESCRIPTOR RootDescriptor;
+	RootDescriptor.RegisterSpace = 0;
+	RootDescriptor.ShaderRegister = 0;
 
-	// Descriptor Table
-	D3D12_ROOT_DESCRIPTOR_TABLE DescriptorTable;
-	DescriptorTable.NumDescriptorRanges = _countof(DescriptorTableRanges);
-	DescriptorTable.pDescriptorRanges = &DescriptorTableRanges[0];
+	D3D12_ROOT_PARAMETER RootParameters[1];
+	RootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	RootParameters[0].Descriptor = RootDescriptor;
+	RootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
-	// Root Parameter
-	D3D12_ROOT_PARAMETER RootPrameters[1];
-	RootPrameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	RootPrameters[0].DescriptorTable = DescriptorTable;
-	RootPrameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-
-	// The actual root signature
-	CD3DX12_ROOT_SIGNATURE_DESC RootSignatureDesc;
-	RootSignatureDesc.Init(
-		_countof(RootPrameters),
-		RootPrameters, 
-		0, 
-		nullptr, 
+	CD3DX12_ROOT_SIGNATURE_DESC RootSignatureDescriptor;
+	RootSignatureDescriptor.Init(_countof(RootParameters), RootParameters, 0, nullptr,
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
-		D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS
-	);
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS);
 
-
-	ID3DBlob* Signature;
-	Hr = D3D12SerializeRootSignature(&RootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &Signature, nullptr);
+	ID3DBlob* Signature = nullptr;
+	Hr = D3D12SerializeRootSignature(&RootSignatureDescriptor, D3D_ROOT_SIGNATURE_VERSION_1, &Signature, nullptr);
 	if (FAILED(Hr))
 	{
 		return false;
@@ -277,9 +314,12 @@ bool CRenderer::InitD3D()
 		return false;
 	}
 
-	// Create the meshes for the scene
-	Mesh = new CMesh;
+	// Create the meshes and the camera for the scene
+	CCube* Cube = new CCube;
+	Mesh = Cube;
 	Mesh->Init(Device, CommandList);
+
+	SceneCamera = new Camera;
 
 	// Depth / Stencil 
 
@@ -324,48 +364,20 @@ bool CRenderer::InitD3D()
 
 	Device->CreateDepthStencilView(DepthStencilBuffer, &DepthStencilDesc, DepthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
-	// Create a constant buffer descriptor heap for each frame
-	for (int i = 0; i < FRAMEBUFFER_COUNT; ++i)
+	for (int i = 0; i < FRAMEBUFFER_COUNT; i++)
 	{
-		D3D12_DESCRIPTOR_HEAP_DESC HeapDesc = {};
-		HeapDesc.NumDescriptors = 1;
-		HeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		HeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		Hr = Device->CreateDescriptorHeap(&HeapDesc, IID_PPV_ARGS(&MainDescriptorHeap[i]));
-		if (FAILED(Hr))
-		{
-			return false;
-		}
-	}
+		CD3DX12_HEAP_PROPERTIES BufferHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		CD3DX12_RESOURCE_DESC Buffer = CD3DX12_RESOURCE_DESC::Buffer(1024 * 64);
+		Hr = Device->CreateCommittedResource(&BufferHeapProperties, D3D12_HEAP_FLAG_NONE,
+		                                     &Buffer,
+		                                     D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+		                                     IID_PPV_ARGS(&ConstantBufferUploadHeaps[i]));
+		ZeroMemory(&ConstantBuffer, sizeof(ConstantBuffer));
+		CD3DX12_RANGE ReadRange(0, 0);
 
-	// Create an upload heap for the constant buffer (no need for a default heap as we will send this every frame)
-	for (int i = 0; i < FRAMEBUFFER_COUNT; ++i)
-	{
-		CD3DX12_HEAP_PROPERTIES HeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-		CD3DX12_RESOURCE_DESC BufferDesc = CD3DX12_RESOURCE_DESC::Buffer(1024 * 64);
-		Device->CreateCommittedResource(
-			&HeapProperties,
-			D3D12_HEAP_FLAG_NONE,
-			&BufferDesc, // Constant buffers must be 64KB aligned
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&ConstantBufferUploadHeap[i])
-		);
-		ConstantBufferUploadHeap[i]->SetName(L"Constant Buffer Upload Resource Heap");
+		Hr = ConstantBufferUploadHeaps[i]->Map(0, &ReadRange, reinterpret_cast<void**>(&ConstantBufferGPUAdress[i]));
 
-		// Create the constant buffer view
-		D3D12_CONSTANT_BUFFER_VIEW_DESC ConstantBufferViewDesc;
-		ConstantBufferViewDesc.BufferLocation = ConstantBufferUploadHeap[i]->GetGPUVirtualAddress();
-		ConstantBufferViewDesc.SizeInBytes = (sizeof(ColorConstantBuffer) + 255) & ~255; // Constant Buffer must be 256-byte aligned
-		Device->CreateConstantBufferView(&ConstantBufferViewDesc, MainDescriptorHeap[i]->GetCPUDescriptorHandleForHeapStart());
-
-		// zero out the memory of our constant buffer
-		ZeroMemory(&ConstantBufferColorMultiplierData, sizeof(ConstantBufferColorMultiplierData));
-
-		// Map our resource then memcpy it
-		CD3DX12_RANGE ReadRange(0, 0); // if end >= begin, the CPU can't access the memory, that's what we want here
-		Hr = ConstantBufferUploadHeap[i]->Map(0, &ReadRange, reinterpret_cast<void**>(&ConstantBufferColorMultiplierGPUAdress[i]));
-		memcpy(ConstantBufferColorMultiplierGPUAdress[i], &ConstantBufferColorMultiplierData, sizeof(ConstantBufferColorMultiplierData));
+		memcpy(ConstantBufferGPUAdress[i], &ConstantBuffer, sizeof(ConstantBuffer));
 	}
 
 	CommandList->Close();
@@ -402,56 +414,54 @@ bool CRenderer::InitD3D()
 	ScissorRect.right = WindowWidth;
 	ScissorRect.bottom = WindowHeight;
 
+#pragma region MeshPosition
+	// Cube position
+	MeshPosition = DirectX::XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+	DirectX::XMVECTOR MeshPos = XMLoadFloat4(&MeshPosition);
+
+	DirectX::XMMATRIX TranslationMatrix = DirectX::XMMatrixTranslationFromVector(MeshPos);
+	XMStoreFloat4x4(&MeshRotMat, DirectX::XMMatrixIdentity());
+	XMStoreFloat4x4(&MeshWorldMat, TranslationMatrix);
+
+#pragma endregion
+
 	return true;
 }
 
 void CRenderer::Update()
 {
-	// update app logic, such as moving the camera or figuring out what objects are in view
-	static float rIncrement = 0.00002f;
-	static float gIncrement = 0.00006f;
-	static float bIncrement = 0.00009f;
+	// Rotate the mesh
+	DirectX::XMFLOAT3 Rotation = Mesh->GetRotation();
+	Rotation.y += 0.01f;
+	Rotation.x += 0.001f;
+	Mesh->SetRotation(Rotation);
 
-	ConstantBufferColorMultiplierData.ColorMultiplier.x += rIncrement;
-	ConstantBufferColorMultiplierData.ColorMultiplier.y += gIncrement;
-	ConstantBufferColorMultiplierData.ColorMultiplier.z += bIncrement;
+	// update constant buffer
+	DirectX::XMMATRIX ViewMatrix = DirectX::XMLoadFloat4x4(&SceneCamera->ViewMatrix);
+	DirectX::XMMATRIX ProjMatrix = DirectX::XMLoadFloat4x4(&SceneCamera->ProjectionMatrix);
+	XMFLOAT4X4 WorldMat = Mesh->GetWorldMatrix();
+	DirectX::XMMATRIX WVPMatrix = DirectX::XMLoadFloat4x4(&WorldMat) * ViewMatrix * ProjMatrix;
+	DirectX::XMMATRIX Transposed = DirectX::XMMatrixTranspose(WVPMatrix);
+	DirectX::XMStoreFloat4x4(&ConstantBuffer.WorldViewProj, Transposed);
 
-	if (ConstantBufferColorMultiplierData.ColorMultiplier.x >= 1.0 || ConstantBufferColorMultiplierData.ColorMultiplier.x <= 0.0)
-	{
-		ConstantBufferColorMultiplierData.ColorMultiplier.x = ConstantBufferColorMultiplierData.ColorMultiplier.x >= 1.0 ? 1.0 : 0.0;
-		rIncrement = -rIncrement;
-	}
-	if (ConstantBufferColorMultiplierData.ColorMultiplier.y >= 1.0 || ConstantBufferColorMultiplierData.ColorMultiplier.y <= 0.0)
-	{
-		ConstantBufferColorMultiplierData.ColorMultiplier.y = ConstantBufferColorMultiplierData.ColorMultiplier.y >= 1.0 ? 1.0 : 0.0;
-		gIncrement = -gIncrement;
-	}
-	if (ConstantBufferColorMultiplierData.ColorMultiplier.z >= 1.0 || ConstantBufferColorMultiplierData.ColorMultiplier.z <= 0.0)
-	{
-		ConstantBufferColorMultiplierData.ColorMultiplier.z = ConstantBufferColorMultiplierData.ColorMultiplier.z >= 1.0 ? 1.0 : 0.0;
-		bIncrement = -bIncrement;
-	}
+	memcpy(ConstantBufferGPUAdress[FrameIndex], &ConstantBuffer, sizeof(ConstantBuffer));
 
-	// copy our ConstantBuffer instance to the mapped constant buffer resource
-	memcpy(ConstantBufferColorMultiplierGPUAdress[FrameIndex], &ConstantBufferColorMultiplierData, sizeof(ConstantBufferColorMultiplierData));
 }
 
 void CRenderer::UpdatePipeline()
 {
-	HRESULT Hr;
-
 	WaitForPreviousFrame();
-	Hr = CommandAllocators[FrameIndex]->Reset();
+	HRESULT Hr = CommandAllocators[FrameIndex]->Reset();
 	if (FAILED(Hr))
 	{
-		MessageBox(0, L"Couldn't Reset the Allocator", 0, 0);
+		MessageBox(nullptr, L"Couldn't Reset the Allocator", nullptr, 0);
 		bRunning = false;
 	}
 
 	Hr = CommandList->Reset(CommandAllocators[FrameIndex], PSO);
 	if (FAILED(Hr))
 	{
-		MessageBox(0, L"Couldn't Reset the Command List", 0, 0);
+		MessageBox(nullptr, L"Couldn't Reset the Command List", nullptr, 0);
 		bRunning = false;
 	}
 
@@ -460,9 +470,9 @@ void CRenderer::UpdatePipeline()
 	// We create a resource Barrier to transition from present to render target state and we get a handle to the current RTV
 	CD3DX12_RESOURCE_BARRIER Barrier = CD3DX12_RESOURCE_BARRIER::Transition(RenderTargets[FrameIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	CommandList->ResourceBarrier(1, &Barrier);
-	
-	CD3DX12_CPU_DESCRIPTOR_HANDLE RTVHandle(RTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), FrameIndex, RTVDescriptorSize);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE DepthStencilHandle(DepthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+
+	const CD3DX12_CPU_DESCRIPTOR_HANDLE RTVHandle(RTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), FrameIndex, RTVDescriptorSize);
+	const CD3DX12_CPU_DESCRIPTOR_HANDLE DepthStencilHandle(DepthStencilDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
 	CommandList->OMSetRenderTargets(1, &RTVHandle, false, &DepthStencilHandle);
 
@@ -476,15 +486,10 @@ void CRenderer::UpdatePipeline()
 	// Set the root signature
 	CommandList->SetGraphicsRootSignature(RootSignature);
 
-	// Set the constant buffer descriptor heap
-	ID3D12DescriptorHeap* DescriptorHeaps[] =  { MainDescriptorHeap[FrameIndex] };
-	CommandList->SetDescriptorHeaps(_countof(DescriptorHeaps), DescriptorHeaps);
-
-	// Set the root descriptor table 0 to the constant buffer descriptor heap
-	CommandList->SetGraphicsRootDescriptorTable(0, MainDescriptorHeap[FrameIndex]->GetGPUDescriptorHandleForHeapStart());
-
 	CommandList->RSSetViewports(1, &Viewport);
 	CommandList->RSSetScissorRects(1, &ScissorRect);
+
+	CommandList->SetGraphicsRootConstantBufferView(0, ConstantBufferUploadHeaps[FrameIndex]->GetGPUVirtualAddress());
 
 	Mesh->Draw(CommandList);
 
@@ -495,21 +500,19 @@ void CRenderer::UpdatePipeline()
 	Hr = CommandList->Close();
 	if (FAILED(Hr))
 	{
-		MessageBox(0, L"Couldn't close the Command List", 0, 0);
+		MessageBox(nullptr, L"Couldn't close the Command List", 0, 0);
 		bRunning = false;
 	}
 }
 
-void CRenderer::Render()
+void CRenderer::Render() 
 {
-	HRESULT Hr;
-
 	UpdatePipeline();
 
 	ID3D12CommandList* ppCommandLists[] = { CommandList };
 	CommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
-	Hr = CommandQueue->Signal(Fences[FrameIndex], FenceValues[FrameIndex]);
+	HRESULT Hr = CommandQueue->Signal(Fences[FrameIndex], FenceValues[FrameIndex]);
 	if (FAILED(Hr))
 	{
 		bRunning = false;
@@ -533,9 +536,9 @@ void CRenderer::Cleanup()
 
 	// Get SwapChain out of fullscreen before exiting
 	BOOL bFS = false;
-	if (SwapChain->GetFullscreenState(&bFS, NULL))
+	if (SwapChain->GetFullscreenState(&bFS, nullptr))
 	{
-		SwapChain->SetFullscreenState(false, NULL);
+		SwapChain->SetFullscreenState(false, nullptr);
 	}
 
 	SAFE_RELEASE(Device);
@@ -553,11 +556,11 @@ void CRenderer::Cleanup()
 		SAFE_RELEASE(RenderTargets[i]);
 		SAFE_RELEASE(CommandAllocators[i]);
 		SAFE_RELEASE(Fences[i]);
-		SAFE_RELEASE(MainDescriptorHeap[i]);
-		SAFE_RELEASE(ConstantBufferUploadHeap[i]);
+		SAFE_RELEASE(ConstantBufferUploadHeaps[i]);
 	}
 
 	delete Mesh;
+	delete SceneCamera;
 }
 
 void CRenderer::WaitForPreviousFrame()
