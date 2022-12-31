@@ -104,6 +104,7 @@
     <ClInclude Include="Source\Mesh.h" />
     <ClInclude Include="Source\pch.h" />
     <ClInclude Include="Source\Renderer.h" />
+    <ClInclude Include="Source\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DX12Sandbox.rc" />

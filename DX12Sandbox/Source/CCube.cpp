@@ -5,39 +5,39 @@ CCube::CCube()
 {
 	Vertices.clear();
 	// Front
-	Vertices.emplace_back(DirectX::XMFLOAT3(-0.5f,	0.5f,		-0.5f),	DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f));
-	Vertices.emplace_back(DirectX::XMFLOAT3(0.5f,	-0.5f,	-0.5f),		DirectX::XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f));
-	Vertices.emplace_back(DirectX::XMFLOAT3(-0.5f,	-0.5f,	-0.5f),		DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f));
-	Vertices.emplace_back(DirectX::XMFLOAT3(0.5f,	0.5f,		-0.5f),	DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f));
+	Vertices.emplace_back(DirectX::XMFLOAT3(-0.5f,	0.5f,		-0.5f),	DirectX::XMFLOAT2(0.0f, 0.0f));
+	Vertices.emplace_back(DirectX::XMFLOAT3(0.5f,	-0.5f,	-0.5f),		DirectX::XMFLOAT2(1.0f, 1.0f));
+	Vertices.emplace_back(DirectX::XMFLOAT3(-0.5f,	-0.5f,	-0.5f),		DirectX::XMFLOAT2(0.0f, 1.0f));
+	Vertices.emplace_back(DirectX::XMFLOAT3(0.5f,	0.5f,		-0.5f),	DirectX::XMFLOAT2(1.0f, 0.0f));
 
 	// Right
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f,	-0.5f,	-0.5f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)));
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f, 0.5f, 0.5f), DirectX::XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f)));
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f, -0.5f, 0.5f), DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)));
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f, 0.5f, -0.5f), DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f,	-0.5f,	-0.5f), DirectX::XMFLOAT2(0.0f, 1.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f, 0.5f, 0.5f), DirectX::XMFLOAT2(1.0f, 0.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f, -0.5f, 0.5f), DirectX::XMFLOAT2(1.0f, 1.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f, 0.5f, -0.5f), DirectX::XMFLOAT2(0.0f, 0.0f)));
 
 	// Left
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f,	0.5f,		0.5f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)));
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f, -0.5f, -0.5f), DirectX::XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f)));
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f, -0.5f, 0.5f), DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)));
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f, 0.5f, -0.5f), DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f,	0.5f,		0.5f), DirectX::XMFLOAT2(0.0f, 0.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f, -0.5f, -0.5f), DirectX::XMFLOAT2(1.0f, 1.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f, -0.5f, 0.5f), DirectX::XMFLOAT2(0.0f, 1.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f, 0.5f, -0.5f), DirectX::XMFLOAT2(1.0f, 0.0f)));
 
 	// Back
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f,	0.5f,		0.5f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)));
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f, -0.5f, 0.5f), DirectX::XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f)));
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f, -0.5f, 0.5f), DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)));
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f, 0.5f, 0.5f), DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f,	0.5f,		0.5f), DirectX::XMFLOAT2(0.0f, 0.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f, -0.5f, 0.5f), DirectX::XMFLOAT2(1.0f, 1.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f, -0.5f, 0.5f), DirectX::XMFLOAT2(0.0f, 1.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f, 0.5f, 0.5f), DirectX::XMFLOAT2(1.0f, 0.0f)));
 	// Top
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f,	0.5f,		-0.5f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)));
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f, 0.5f, 0.5f), DirectX::XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f)));
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f, 0.5f, -0.5f), DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)));
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f, 0.5f, 0.5f), DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f,	0.5f,		-0.5f), DirectX::XMFLOAT2(0.0f, 1.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f, 0.5f, 0.5f), DirectX::XMFLOAT2(1.0f, 0.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f, 0.5f, -0.5f), DirectX::XMFLOAT2(1.0f, 1.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f, 0.5f, 0.5f), DirectX::XMFLOAT2(0.0f, 0.0f)));
 
 	// Bottom
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f,	-0.5f,	0.5f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)));
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f, -0.5f, -0.5f), DirectX::XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f)));
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f, -0.5f, -0.5f), DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)));
-	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f, -0.5f, 0.5f), DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f,	-0.5f,	0.5f), DirectX::XMFLOAT2(0.0f, 0.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f, -0.5f, -0.5f), DirectX::XMFLOAT2(1.0f, 1.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(0.5f, -0.5f, -0.5f), DirectX::XMFLOAT2(0.0f, 1.0f)));
+	Vertices.emplace_back(Vertex(DirectX::XMFLOAT3(-0.5f, -0.5f, 0.5f), DirectX::XMFLOAT2(1.0f, 0.0f)));
 
 	Indices =
 	{

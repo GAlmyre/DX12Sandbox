@@ -16,6 +16,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{0bc88f88-f5f5-4489-8f5f-8d275a373157}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Externals">
+      <UniqueIdentifier>{d3f13888-cee2-46b4-bd0d-312ca4f60e6e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Main.cpp">
@@ -64,6 +67,9 @@
     </ClInclude>
     <ClInclude Include="Source\Camera.h">
       <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\stb_image.h">
+      <Filter>Externals</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

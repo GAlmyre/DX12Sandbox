@@ -7,14 +7,15 @@
 
 struct Vertex
 {
-	Vertex(XMFLOAT3 InPos, XMFLOAT4 InColor) 
+	Vertex(XMFLOAT3 InPos, XMFLOAT2 InTexCoord)
 	{ 
 		Pos = InPos; 
-		Color = InColor;	
+		TexCoord = InTexCoord;
 	}
 
 	XMFLOAT3 Pos;
-	XMFLOAT4 Color; 
+	//XMFLOAT4 Color;
+	XMFLOAT2 TexCoord;
 };
 
 class CMesh : public Actor

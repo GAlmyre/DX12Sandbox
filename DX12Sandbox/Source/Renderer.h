@@ -1,5 +1,7 @@
+#pragma once
 #include "pch.h"
 #include <DirectXMath.h>
+#include <wincodec.h>
 
 #define FRAMEBUFFER_COUNT 3
 
@@ -31,6 +33,12 @@ public:
 
 	// Wait until the GPU is finished with a command list
 	void WaitForPreviousFrame();
+
+	DXGI_FORMAT GetDXGIFormatFromWICFormat(WICPixelFormatGUID& WicFormatGUID);
+	WICPixelFormatGUID GetConvertToWICFormat(WICPixelFormatGUID& WicFormatGUID);
+	int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& DxgiFormat);
+	// Load an image in the form of a bitmap
+	int LoadImageDataFromFile(BYTE** ImageData, D3D12_RESOURCE_DESC& ResourceDescription, LPCWSTR Filename, int& BytesPerRow);
 
 	bool bRunning = true;
 
@@ -119,21 +127,13 @@ public:
 
 	class CMesh* Mesh = nullptr;
 
-	/********** Camera **********/
-
+	// Camera 
 	class Camera* SceneCamera = nullptr;
 
-	//DirectX::XMFLOAT4X4 CamProjMatrix; // this will store our projection matrix
-	//DirectX::XMFLOAT4X4 CamViewMatrix; // this will store our view matrix
+	/* TEXTURE */
+	ID3D12Resource* TextureBuffer;
 
-	//DirectX::XMFLOAT4 CameraPosition; // this is our cameras position vector
-	//DirectX::XMFLOAT4 CameraTarget; // a vector describing the point in space our camera is looking at
-	//DirectX::XMFLOAT4 CameraUp; // the worlds up vector
+	ID3D12DescriptorHeap* MainDescriptorHeap;
 
-	DirectX::XMFLOAT4X4 MeshWorldMat; // our first cubes world matrix (transformation matrix)
-	DirectX::XMFLOAT4X4 MeshRotMat; // this will keep track of our rotation for the first cube
-	DirectX::XMFLOAT4 MeshPosition; // our first cubes position in space
-
-	/********** End Camera **********/
-
+	ID3D12Resource* TextureBufferUploadHeap;
 };
